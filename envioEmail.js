@@ -1,5 +1,7 @@
 function enviarEmailPadrao(host, port, secure = false, user, pass, tls = false, from, to, subject,
-    text, imagem, assinatura) {
+    text, imagem_url, signature) {
+     
+     text = text.replace(/\n/g, "<br>");   
 
     const nodemailer = require('nodemailer');
     const transporter = nodemailer.createTransport({
@@ -17,7 +19,7 @@ function enviarEmailPadrao(host, port, secure = false, user, pass, tls = false, 
         from: from,
         to: to,
         subject: subject,
-        text: text + assinatura,
+        text: text + signature,
         html: `
      <!DOCTYPE html>
      <html lang="pt-br">
@@ -28,9 +30,11 @@ function enviarEmailPadrao(host, port, secure = false, user, pass, tls = false, 
       <title></title>
     </head>
     <body>
-        <>${texto.replace(/\n/g, "<br>")}</>
-        <img src=${imagem} alt="Exemplo de Imagem">
-        <br>${assinatura}</>
+        <div>
+        ${text.replace(/\n/g, "<br>")}
+        </div>
+        <img src=${imagem_url} alt="Exemplo de Imagem">
+        <br>${signature}</>
     </body>
     </html>`
 
@@ -39,8 +43,10 @@ function enviarEmailPadrao(host, port, secure = false, user, pass, tls = false, 
     transporter.sendMail(mailOptions, function (error, info) {
         if (error) {
             console.log(error);
+            throw new Error("Erro no envio do email: ", error)
         } else {
             console.log("Email enviado:", info.response);
         }
     })
 }
+ module.exports.enviarEmailPadrao = enviarEmailPadrao;

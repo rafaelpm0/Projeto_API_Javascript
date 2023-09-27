@@ -5,31 +5,46 @@ app.use(express.json());
 
 const envioEmail = require('./envioEmail');
 
-function postEnviarEmailPadrao(){
+
+
+function postEnviarEmailPadrao() {
     app.post('/send/email', (req, res) => {
         console.log(req.body)
 
-        try{
-            let {host, port, secure = false, user, pass, tls = false, from, remetente, modeloEmail} = req.body
+        
+            const { host, port, secure = false, user, pass, tls = false, from, remetente, modeloEmail } = req.body
+            let to, titulo, corpo, assinatura, imagem_url 
+            
             const db = abrirBranco();
-            db.all(`SELECT email FROM remetente WHERE ID = ${remetente}`,
-            [],
-            (err, rows) => {
-                if((err) || (rows.length ===0)){
-                    console.log("Remetente nao cadastrado ", err)
-                    res.status(404).json({NotFound: "Remetente nao cadastrado", err})
-                }else{
-                    console.log(rows)
-                    remetente = rows;
-                   // console.log(rows[0].email)
-                }
-            })
 
-            /*host - ok, port - ok, secure = false - ok, user - ok, pass - ok, tls = false - ok, from - ok, to, subject,
-    text, imagem, assinatura)*/
-                 
+            db.all(`SELECT email FROM remetente WHERE id = ${remetente}`,
+                [],
+                (err, rows) => {
+                    if ((err) || (rows.length === 0)) {
+                        console.log("Remetente nao cadastrado ", err)
+                        res.status(404).json({ NotFound: "Remetente nao cadastrado", err })
+                    } else {
+                        console.log("Remetente: ", rows);
+                        to = rows[0].email;
 
-        }catch(err) {res.status(404).json({NotFound: "Remetente nao cadastrado", err})}
+                        db.all(`SELECT titulo, corpo, assinatura, imagem_url FROM modeloEmail where id = ${modeloEmail}`,
+                        [],
+                        (err, rows) => {
+                            if ((err) || (rows.length === 0)) {
+                                console.log("ModeloEmail nao cadastrado ", err)
+                                res.status(404).json({ NotFound: "ModeloEmail nao cadastrado", err })
+                            } else {
+                                ({ titulo, corpo, assinatura, imagem_url } = rows[0]);
+                                envioEmail.enviarEmailPadrao(host, port, secure, user, pass, tls, from, to, titulo,
+                                corpo, imagem_url, assinatura);
+                            }
+                        }
+                    );
+
+                    }
+                })
+
+            fecharBanco(db);
     })
 }
 
@@ -112,114 +127,114 @@ function postTag() {
     });
 }
 
-function getTag() {  
-    try{
-    app.get('/search/tag', (req, res) => {
-        let db = abrirBranco()
+function getTag() {
+    try {
+        app.get('/search/tag', (req, res) => {
+            let db = abrirBranco()
 
-        db.all(`SELECT * FROM tag`,
-            [],
-            (err, rows) => {
-                if (err) {
-                    console.log("Erro consulta tabela tag", err.message);
-                    res.status(400).json({ error: err.message })
-                } else {
-                    console.log("Sucesso consulta tabela tag");
-                    res.json(rows);
-                }
-            });
-        fecharBanco(db);
-    });
-    }catch (err) {res.status(400).json({error: err.message})}
+            db.all(`SELECT * FROM tag`,
+                [],
+                (err, rows) => {
+                    if (err) {
+                        console.log("Erro consulta tabela tag", err.message);
+                        res.status(400).json({ error: err.message })
+                    } else {
+                        console.log("Sucesso consulta tabela tag");
+                        res.json(rows);
+                    }
+                });
+            fecharBanco(db);
+        });
+    } catch (err) { res.status(400).json({ error: err.message }) }
 }
 
-function postModeloEmail(){
-    try{
-    app.post('/insert/modeloEmail', (req, res) =>{
-        let db = abrirBranco()
+function postModeloEmail() {
+    try {
+        app.post('/insert/modeloEmail', (req, res) => {
+            let db = abrirBranco()
 
-        let {nome, titulo, corpo, assinatura, imagem_url} = req.body
+            let { nome, titulo, corpo, assinatura, imagem_url } = req.body
 
-        db.run(`INSERT INTO modeloEmail(nome, titulo, corpo, assinatura, imagem_url)
+            db.run(`INSERT INTO modeloEmail(nome, titulo, corpo, assinatura, imagem_url)
                     VALUES(?,?,?,?,?)`,
-                    [nome, titulo, corpo, assinatura, imagem_url],
-                    err => {
-                        if(err){
-                            console.log("Insercao do ModeloEmail com erro ", err)
-                            res.status(400).json({error: err.message})
-                        }else{
-                            console.log("Insercao do ModeloEmail com sucesso")
-                            res.status(201).json({message: "ModeloEmail added successufully"})
-                        }
-                    })
-    });
-    }catch (err){res.status(400).json({error: err.message})}
+                [nome, titulo, corpo, assinatura, imagem_url],
+                err => {
+                    if (err) {
+                        console.log("Insercao do ModeloEmail com erro ", err)
+                        res.status(400).json({ error: err.message })
+                    } else {
+                        console.log("Insercao do ModeloEmail com sucesso")
+                        res.status(201).json({ message: "ModeloEmail added successufully" })
+                    }
+                })
+        });
+    } catch (err) { res.status(400).json({ error: err.message }) }
 
 }
 
-function getModeloEmail(){
-    try{
-    app.get('/search/modeloEmail', (req, res) =>{
-        let db = abrirBranco()
+function getModeloEmail() {
+    try {
+        app.get('/search/modeloEmail', (req, res) => {
+            let db = abrirBranco()
 
-        db.all(`SELECT * FROM modeloEmail`,
-                    [],
-                    (err, rows) => {
-                        if(err){
-                            console.log("Consulta do ModeloEmail com erro ", err)
-                            res.status(400).json({error: err.message})
-                        }else{
-                            console.log("Consulta do ModeloEmail com sucesso")
-                            res.status(201).json({rows})
-                        }
-                    })
-    });
-    }catch (err){res.status(400).json({error: err.message})}
+            db.all(`SELECT * FROM modeloEmail`,
+                [],
+                (err, rows) => {
+                    if (err) {
+                        console.log("Consulta do ModeloEmail com erro ", err)
+                        res.status(400).json({ error: err.message })
+                    } else {
+                        console.log("Consulta do ModeloEmail com sucesso")
+                        res.status(201).json({ rows })
+                    }
+                })
+        });
+    } catch (err) { res.status(400).json({ error: err.message }) }
 
 }
 // daqui
-function postModeloEmail_tag(){
-    try{
-    app.post('/insert/ModeloEmail_tag', (req, res) =>{
-        let db = abrirBranco()
+function postModeloEmail_tag() {
+    try {
+        app.post('/insert/ModeloEmail_tag', (req, res) => {
+            let db = abrirBranco()
 
-        let {id_modeloEmail, nome_tag} = req.body
+            let { id_modeloEmail, nome_tag } = req.body
 
-        db.run(`INSERT INTO modeloEmail_tag(id_modeloEmail, nome_tag)
+            db.run(`INSERT INTO modeloEmail_tag(id_modeloEmail, nome_tag)
                     VALUES(?,?)`,
-                    [id_modeloEmail, nome_tag],
-                    err => {
-                        if(err){
-                            console.log("Insercao do ModeloEmail_tag com erro ", err)
-                            res.status(400).json({error: err.message})
-                        }else{
-                            console.log("Insercao do ModeloEmail_tag com sucesso")
-                            res.status(201).json({message: "ModeloEmail_tag added successufully"})
-                        }
-                    })
-    });
-    }catch (err){res.status(400).json({error: err.message})}
+                [id_modeloEmail, nome_tag],
+                err => {
+                    if (err) {
+                        console.log("Insercao do ModeloEmail_tag com erro ", err)
+                        res.status(400).json({ error: err.message })
+                    } else {
+                        console.log("Insercao do ModeloEmail_tag com sucesso")
+                        res.status(201).json({ message: "ModeloEmail_tag added successufully" })
+                    }
+                })
+        });
+    } catch (err) { res.status(400).json({ error: err.message }) }
 
 }
 
-function getModeloEmail_tag(){
-    try{
-    app.get('/search/modeloEmail_tag', (req, res) =>{
-        let db = abrirBranco()
+function getModeloEmail_tag() {
+    try {
+        app.get('/search/modeloEmail_tag', (req, res) => {
+            let db = abrirBranco()
 
-        db.all(`SELECT * FROM modeloEmail_tag`,
-                    [],
-                    (err, rows) => {
-                        if(err){
-                            console.log("Consulta do ModeloEmail_tag com erro ", err)
-                            res.status(400).json({error: err.message})
-                        }else{
-                            console.log("Consulta do ModeloEmail_tag com sucesso")
-                            res.status(201).json({rows})
-                        }
-                    })
-    });
-    }catch (err){res.status(400).json({error: err.message})}
+            db.all(`SELECT * FROM modeloEmail_tag`,
+                [],
+                (err, rows) => {
+                    if (err) {
+                        console.log("Consulta do ModeloEmail_tag com erro ", err)
+                        res.status(400).json({ error: err.message })
+                    } else {
+                        console.log("Consulta do ModeloEmail_tag com sucesso")
+                        res.status(201).json({ rows })
+                    }
+                })
+        });
+    } catch (err) { res.status(400).json({ error: err.message }) }
 
 }
 
@@ -355,9 +370,9 @@ function criarBase(db) {
     } catch (err) { console.log("Erro ao criar as tabelas ", err) }
 
 }
-db = abrirBranco()
-criarBase(db)
-fecharBanco(db)
+//db = abrirBranco()
+//criarBase(db)
+//fecharBanco(db)
 
 
 postRemetente();
@@ -370,7 +385,7 @@ postModeloEmail_tag();
 getModeloEmail_tag();
 postEnviarEmailPadrao();
 
-    app.listen(port, () => {
-        console.log(`Server is running on port ${port}`);
-    });
+app.listen(port, () => {
+    console.log(`Server is running on port ${port}`);
+});
 

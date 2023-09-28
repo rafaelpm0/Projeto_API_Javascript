@@ -1,7 +1,8 @@
 function enviarEmailPadrao(host, port, secure = false, user, pass, tls = false, from, to, subject,
     text, imagem_url, signature) {
      
-     text = text.replace(/\n/g, "<br>");   
+     text = text.replace(/\n/g, "<br>");
+     signature = signature.replace(/\n/g, "<br>");     
 
     const nodemailer = require('nodemailer');
     const transporter = nodemailer.createTransport({
@@ -31,10 +32,14 @@ function enviarEmailPadrao(host, port, secure = false, user, pass, tls = false, 
     </head>
     <body>
         <div>
-        ${text.replace(/\n/g, "<br>")}
+        ${text}
         </div>
         <img src=${imagem_url} alt="Exemplo de Imagem">
-        <br>${signature}</>
+        <br>
+        <div>
+        ${signature}
+        </div>
+        </>
     </body>
     </html>`
 

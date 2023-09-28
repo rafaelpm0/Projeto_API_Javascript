@@ -11,40 +11,91 @@ function postEnviarEmailPadrao() {
     app.post('/send/email', (req, res) => {
         console.log(req.body)
 
-        
-            const { host, port, secure = false, user, pass, tls = false, from, remetente, modeloEmail } = req.body
-            let to, titulo, corpo, assinatura, imagem_url 
-            
-            const db = abrirBranco();
 
-            db.all(`SELECT email FROM remetente WHERE id = ${remetente}`,
-                [],
-                (err, rows) => {
-                    if ((err) || (rows.length === 0)) {
-                        console.log("Remetente nao cadastrado ", err)
-                        res.status(404).json({ NotFound: "Remetente nao cadastrado", err })
-                    } else {
-                        console.log("Remetente: ", rows);
-                        to = rows[0].email;
+        const { host, port, secure = false, user, pass, tls = false, from, remetente, modeloEmail, tags } = req.body
+        let to, titulo, corpo, assinatura, imagem_url;
 
-                        db.all(`SELECT titulo, corpo, assinatura, imagem_url FROM modeloEmail where id = ${modeloEmail}`,
-                        [],
+        const db = abrirBranco();
+
+        db.all(`SELECT * FROM remetente WHERE id = ?`, // selecte email do remetente
+            [remetente],
+            (err, rows) => {
+                if ((err) || (rows.length === 0)) {
+                    console.log("Remetente nao cadastrado ", err)
+                    res.status(404).json({ NotFound: "Remetente nao cadastrado", err })
+                } else {
+                    console.log("Remetente: ", rows);
+                    to = rows[0];  // colocar .email quando passar para funcao
+
+                    db.all(`SELECT titulo, corpo, assinatura, imagem_url FROM modeloEmail WHERE id = ?`, // select modelo email
+                        [modeloEmail],
                         (err, rows) => {
                             if ((err) || (rows.length === 0)) {
                                 console.log("ModeloEmail nao cadastrado ", err)
                                 res.status(404).json({ NotFound: "ModeloEmail nao cadastrado", err })
                             } else {
                                 ({ titulo, corpo, assinatura, imagem_url } = rows[0]);
-                                envioEmail.enviarEmailPadrao(host, port, secure, user, pass, tls, from, to, titulo,
-                                corpo, imagem_url, assinatura);
+
+                                db.all(`SELECT nome_tag FROM modeloEmail_tag WHERE id_modeloEmail = ?`, // select tags
+                                    [modeloEmail],
+                                    (err, rows) => {
+                                        if ((err) || (rows.length === 0)) {  // testar para ver oque acontece quando é pesquisado e não há tag
+                                            console.log("Tag nao cadastrado ", err)
+                                            res.status(404).json({ NotFound: "Tag nao cadastrado", err })
+                                        } else {
+                                            console.log("TagsBanco: ", rows);
+                                            let tagsBanco = rows.map(x => x.nome_tag);
+
+                                            for (let remet in to) {  // expressao regex para trocar as tag de remetente no corpo e titulo do e-mail
+                                                let regex = new RegExp("{remetente." + remet + "}", "g")
+                                                corpo = corpo.replace(regex, to[remet])
+                                                titulo = titulo.replace(regex, to[remet])
+                                            }
+
+                                            if (typeof tags !== "undefined") {   // realizar a consulta do valor da tag e trocar no texto
+                                                for (let tagRec in tags) {
+                                                    db.all(`SELECT retorno FROM tag WHERE nome = ? AND referencia = ?`, // select do conteudo a ser substituido da tag
+                                                        [tagRec, tags[tagRec]],
+                                                        (err, rows) => {
+                                                            if ((err) || (rows.length === 0)) {
+                                                                console.log("Conteudo da Tag não cadatrado ", err)
+                                                                res.status(404).json({ NotFound: "Conteudo da tag nao cadatrado", err })
+                                                            } else {
+                                                                console.log("Conteudo tag ", rows)
+                                                                let regex = new RegExp("{" + tagRec + "}", "g") // expressoa regex para trocar as tag no corpo e titulo do e-mail
+                                                                corpo = corpo.replace(regex, rows[0].retorno)
+                                                                titulo = titulo.replace(regex, rows[0].retorno)
+
+                                                                envioEmail.enviarEmailPadrao(host, port, secure, user, pass, tls, from, to.email, titulo,
+                                                                corpo, imagem_url, assinatura);
+                                                                
+                                                                console.log("Email enviado com sucesso"); // confirmacao de envio do email e encerrando a funcao
+                                                                res.status(201).json({ message: 'Email send successfuly' });
+
+                                                            }
+                                                        });
+                                                }
+                                            } else {
+                                                console.log("Conteudo da Tag não cadatrado ", err)
+                                                res.status(404).json({ NotFound: "Conteudo da tag nao cadatrado", err })
+                                            }
+
+
+
+                                        }
+                                    }
+                                )
+
+
+
                             }
                         }
                     );
 
-                    }
-                })
+                }
+            })
 
-            fecharBanco(db);
+        fecharBanco(db);
     })
 }
 
@@ -370,9 +421,9 @@ function criarBase(db) {
     } catch (err) { console.log("Erro ao criar as tabelas ", err) }
 
 }
-//db = abrirBranco()
-//criarBase(db)
-//fecharBanco(db)
+db =abrirBranco()
+criarBase(db)
+fecharBanco(db)
 
 
 postRemetente();

@@ -1,3 +1,20 @@
+/**
+ * Envia um e-mail padrão usando o Nodemailer.
+ *
+ * @param {string} host - O servidor SMTP para envio do e-mail.
+ * @param {number} port - A porta do servidor SMTP.
+ * @param {boolean} secure - Define se a conexão é segura (SSL/TLS).
+ * @param {string} user - O nome de usuário para autenticação SMTP.
+ * @param {string} pass - A senha para autenticação SMTP.
+ * @param {boolean} tls - Define se o TLS deve ser ativado (apenas se `secure` for falso).
+ * @param {string} from - O endereço de e-mail remetente.
+ * @param {string} to - O endereço de e-mail destinatário.
+ * @param {string} subject - O assunto do e-mail.
+ * @param {string} text - O corpo do e-mail em formato de texto.
+ * @param {string} imagem_url - A URL da imagem a ser incluída no corpo do e-mail.
+ * @param {string} signature - A assinatura a ser incluída no corpo do e-mail.
+ * @throws {Error} Lança um erro em caso de falha no envio do e-mail.
+ */
 function enviarEmailPadrao(host, port, secure = false, user, pass, tls = false, from, to, subject,
     text, imagem_url, signature) {
      

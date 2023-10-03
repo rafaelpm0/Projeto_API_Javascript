@@ -13,7 +13,7 @@ Requisitos:
 
 Instalação:
 1. Clone este repositório:
-   git clone https://github.com/seu-usuario/seu-projeto.git
+   git clone https://github.com/rafaelpm0/Projeto_API_Javascript
    cd seu-projeto
 
 2. Instale as dependências:

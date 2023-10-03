@@ -217,7 +217,7 @@ function consultaTag(db, chave, valor) {
  * @throws {Error} - Lança um erro em caso de falha na inserção do remetente.
  */
 function postRemetente() {
-    app.post('/insert/remetente', async(req, res) => {
+    app.post('/insert/remetente', async (req, res) => {
 
         console.log(req.body);
 
@@ -237,7 +237,7 @@ function postRemetente() {
                         res.status(201).json({ message: 'User added successfully' });
                     }
                 });
-           await fecharBanco(db);
+            await fecharBanco(db);
 
         } catch (err) { res.status(400).json({ error: err.message }); }
     });
@@ -253,7 +253,7 @@ function postRemetente() {
  * @throws {Error} - Lança um erro em caso de falha na consulta dos remetentes.
  */
 function getClieste() {
-    app.get('/search/remetente', async(req, res) => {
+    app.get('/search/remetente', async (req, res) => {
 
         console.log(req.body);
 
@@ -277,13 +277,13 @@ function getClieste() {
 
 
 function postTag() {
-    app.post('/insert/tag', (req, res) => {
+    app.post('/insert/tag', async (req, res) => {
 
         console.log(req.body)
 
         try {
             let { nome, referencia, retorno } = req.body
-            let db = abrirBranco()
+            let db = await abrirBranco()
 
             db.run(`INSERT INTO tag(nome, referencia, retorno)
             VALUES(?, ?, ?);`,
@@ -297,7 +297,7 @@ function postTag() {
                         res.status(201).json({ message: 'Tag added successfully' })
                     }
                 })
-            fecharBanco(db)
+            await fecharBanco(db)
         }
         catch (err) { res.status(400).json({ error: err.message }) }
 
@@ -315,8 +315,8 @@ function postTag() {
  */
 function getTag() {
     try {
-        app.get('/search/tag', (req, res) => {
-            let db = abrirBranco()
+        app.get('/search/tag', async (req, res) => {
+            let db = await abrirBranco()
 
             db.all(`SELECT * FROM tag`,
                 [],
@@ -329,7 +329,7 @@ function getTag() {
                         res.json(rows);
                     }
                 });
-            fecharBanco(db);
+            await fecharBanco(db);
         });
     } catch (err) { res.status(400).json({ error: err.message }) }
 }
@@ -345,10 +345,10 @@ function getTag() {
  */
 function postModeloEmail() {
     try {
-        app.post('/insert/modeloEmail', (req, res) => {
-            let db = abrirBranco()
+        app.post('/insert/modeloEmail', async (req, res) => {
+            let db = await abrirBranco()
 
-        const { nome, titulo, corpo, assinatura, imagem_url } = req.body
+            const { nome, titulo, corpo, assinatura, imagem_url } = req.body
 
             db.run(`INSERT INTO modeloEmail(nome, titulo, corpo, assinatura, imagem_url)
                     VALUES(?,?,?,?,?)`,
@@ -362,7 +362,9 @@ function postModeloEmail() {
                         res.status(201).json({ message: "ModeloEmail added successufully" })
                     }
                 })
+            await fecharBanco(db)
         });
+
     } catch (err) { res.status(400).json({ error: err.message }) }
 
 }
@@ -378,8 +380,8 @@ function postModeloEmail() {
  */
 function getModeloEmail() {
     try {
-        app.get('/search/modeloEmail', (req, res) => {
-            let db = abrirBranco()
+        app.get('/search/modeloEmail', async(req, res) => {
+            let db = await abrirBranco()
 
             db.all(`SELECT * FROM modeloEmail`,
                 [],
@@ -392,6 +394,7 @@ function getModeloEmail() {
                         res.status(201).json({ rows })
                     }
                 })
+                await fecharBanco(db)
         });
     } catch (err) { res.status(400).json({ error: err.message }) }
 
@@ -408,8 +411,8 @@ function getModeloEmail() {
  */
 function postModeloEmail_tag() {
     try {
-        app.post('/insert/ModeloEmail_tag', (req, res) => {
-            let db = abrirBranco()
+        app.post('/insert/ModeloEmail_tag', async(req, res) => {
+            let db = await abrirBranco()
 
             let { id_modeloEmail, nome_tag } = req.body
 
@@ -425,6 +428,7 @@ function postModeloEmail_tag() {
                         res.status(201).json({ message: "ModeloEmail_tag added successufully" })
                     }
                 })
+                await fecharBanco(db)
         });
     } catch (err) { res.status(400).json({ error: err.message }) }
 }
@@ -440,8 +444,8 @@ function postModeloEmail_tag() {
  */
 function getModeloEmail_tag() {
     try {
-        app.get('/search/modeloEmail_tag', (req, res) => {
-            let db = abrirBranco()
+        app.get('/search/modeloEmail_tag', async(req, res) => {
+            let db = await abrirBranco()
 
             db.all(`SELECT * FROM modeloEmail_tag`,
                 [],
@@ -454,6 +458,7 @@ function getModeloEmail_tag() {
                         res.status(201).json({ rows })
                     }
                 })
+                await fecharBanco(db)
         });
     } catch (err) { res.status(400).json({ error: err.message }) }
 }
@@ -472,10 +477,11 @@ function postCriarBanco() {
             let db = await abrirBranco()
             await criarBase(db);
             await fecharBanco(db)
-            res.status(201).json({message: "Banco de dados criado com sucesso"})
-            });
-    } catch (err) { 
-        res.status(400).json({ error: "Erro na criacao do banco de dados: ", err}) }
+            res.status(201).json({ message: "Banco de dados criado com sucesso" })
+        });
+    } catch (err) {
+        res.status(400).json({ error: "Erro na criacao do banco de dados: ", err })
+    }
 }
 
 
@@ -502,9 +508,9 @@ function abrirBranco() {
                     resolve(db)
                 }
             })
-        }).then(res=>{
+        }).then(res => {
             return res
-        }).catch(err=>{
+        }).catch(err => {
             throw new Error(err)
         })
 
@@ -524,15 +530,16 @@ function abrirBranco() {
 function fecharBanco(db) {
 
     try {
-        return new Promise((resolve, reject)=>{
+        return new Promise((resolve, reject) => {
             db.close(err => {
                 if (err) {
                     console.log("Erro ao fechar banco de dados: ", err.message)
                     reject("Erro ao fechar banco de dados: ", err.message)
                 } else {
-                     console.log("Bando de dados fechado com sucesso") 
-                    resolve("Bando de dados fechado com sucesso")}
-            })  
+                    console.log("Bando de dados fechado com sucesso")
+                    resolve("Bando de dados fechado com sucesso")
+                }
+            })
         })
 
     }
@@ -546,8 +553,8 @@ function fecharBanco(db) {
  * @returns {string} - Retorna uma mensagem de falha ou sucesso na criação das tabelas.
  */
 function criarBase(db) {
-        return new Promise((resolve, reject) =>{
-            db.run(`CREATE TABLE IF NOT EXISTS remetente (
+    return new Promise((resolve, reject) => {
+        db.run(`CREATE TABLE IF NOT EXISTS remetente (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 nome TEXT,
                 email TEXT,
@@ -556,29 +563,29 @@ function criarBase(db) {
                 info_ad_2 TEXT,
                 info_ad_3 TEXT
               )`, err => {
-                      if (err) {
-                          console.log("Falha na criação da tabela 'remetente'", err.message);
-                          reject(err);
-                      } else {
-                          console.log("Tabela 'remetente' criada com sucesso");
-                      }
-                  });
-          
-                  db.run(`CREATE TABLE IF NOT EXISTS tag (
+            if (err) {
+                console.log("Falha na criação da tabela 'remetente'", err.message);
+                reject(err);
+            } else {
+                console.log("Tabela 'remetente' criada com sucesso");
+            }
+        });
+
+        db.run(`CREATE TABLE IF NOT EXISTS tag (
                 nome TEXT NOT NULL,
                 referencia TEXT NOT NULL,
                 retorno TEXT,
                 PRIMARY KEY (nome, referencia)
               )`, err => {
-                      if (err) {
-                          console.log("Falha na criação da tabela 'tag'", err.message);
-                          reject(err)
-                      } else {
-                          console.log("Tabela 'tag' criada com sucesso");
-                      }
-                  });
-          
-                  db.run(`CREATE TABLE IF NOT EXISTS modeloEmail (
+            if (err) {
+                console.log("Falha na criação da tabela 'tag'", err.message);
+                reject(err)
+            } else {
+                console.log("Tabela 'tag' criada com sucesso");
+            }
+        });
+
+        db.run(`CREATE TABLE IF NOT EXISTS modeloEmail (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 nome TEXT,
                 titulo TEXT,
@@ -586,36 +593,36 @@ function criarBase(db) {
                 assinatura TEXT,
                 imagem_url TEXT
               )`, err => {
-                      if (err) {
-                          console.log("Falha na criação da tabela 'modeloEmail'", err.message);
-                          reject(err)
-                      } else {
-                          console.log("Tabela 'modeloEmail' criada com sucesso");
-                      }
-                  });
-          
-                  db.run(`CREATE TABLE IF NOT EXISTS modeloEmail_tag (
+            if (err) {
+                console.log("Falha na criação da tabela 'modeloEmail'", err.message);
+                reject(err)
+            } else {
+                console.log("Tabela 'modeloEmail' criada com sucesso");
+            }
+        });
+
+        db.run(`CREATE TABLE IF NOT EXISTS modeloEmail_tag (
                 id_modeloEmail INTEGER,
                 nome_tag TEXT,
                 FOREIGN KEY(id_modeloEmail) REFERENCES modeloEmail(id),    
                 FOREIGN KEY(nome_tag) REFERENCES tag(nome)
                 PRIMARY KEY (id_modeloEmail, nome_tag)
               )`, err => {
-                      if (err) {
-                          console.log("Falha na criação da tabela 'modeloEmail_tag'", err.message);
-                          reject(err)
-                      } else {
-                          console.log("Tabela 'modeloEmail_tag' criada com sucesso");
-                          resolve();
-                      }
-                  });
-                    
-        }) .then(resolve => {
-            return 
+            if (err) {
+                console.log("Falha na criação da tabela 'modeloEmail_tag'", err.message);
+                reject(err)
+            } else {
+                console.log("Tabela 'modeloEmail_tag' criada com sucesso");
+                resolve();
+            }
+        });
+
+    }).then(resolve => {
+        return
+    })
+        .catch(err => {
+            throw new Error(err)
         })
-            .catch(err => {
-                throw new Error(err)
-            })
 }
 
 postCriarBanco();

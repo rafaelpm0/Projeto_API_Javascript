@@ -49,5 +49,4 @@ async function teste(){
     consultaModeloEmail(db, 1)
 }
 
-teste()
 

@@ -79,7 +79,7 @@ function postEnviarEmailPadrao() {
                 }
             }
 
-            fecharBanco(db);
+            await fecharBanco(db);
             envioEmail.enviarEmailPadrao(host, port, secure, user, pass, tls, from, to.email, titulo,
                 corpo, imagem_url, assinatura);
 

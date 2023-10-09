@@ -108,11 +108,18 @@ function postEnviarEmailPadrao() {
             }
 
             await fecharBanco(db);
-            envioEmail.enviarEmailPadrao(host, port, secure, user, pass, tls, from, to.email, titulo,
-                corpo, imagem_url, assinatura);
-
-            console.log("Email enviado com sucesso"); // confirmacao de envio do email e encerrando a funcao
-            res.status(201).json({ message: 'Email enviado com sucesso send successfuly' });
+            
+            
+            await envioEmail.enviarEmailPadrao(host, port, secure, user, pass, tls, from, to.email, titulo,
+                corpo, imagem_url, assinatura)
+                .then(resolve =>{
+                    console.log("Email enviado com sucesso"); 
+                    res.status(201).json({ message: 'Email enviado com sucesso send successfuly' });
+                })
+                .catch(reject=>{
+                    console.log("Email rejeitado");
+                    res.status(404).json({ Error: 'Email rejeitado: ', reject});
+                })
 
         }
 
@@ -224,6 +231,8 @@ function postTag() {
         try {
             let { nome, referencia, retorno } = req.body
             let db = await abrirBranco()
+
+            nome = nome.toLowerCase()
 
             db.run(`INSERT INTO tag(nome, referencia, retorno)
             VALUES(?, ?, ?);`,

@@ -27,7 +27,7 @@ Descrição pratica:
 
 1. Inserção de Remetente: Você adicionará um remetente com informações como nome, e-mail, telefone e campos adicionais ao sistema.
 
-2. Inserção de Tag: Uma tag será adicionada, que pode ser usada para personalizar os e-mails.
+2. Inserção de Tag: Uma tag será adicionada, que pode ser usada para personalizar os e-mails. Todas as tags serão salvas em lowerCase
 
 3. Inserção de Modelo de E-mail: Você criará um modelo de e-mail que contém tags no corpo, utilizando a notação {} para indicar onde 
 as tags devem ser inseridas (por exemplo, "{exemplo}" ou "{remetente.email}"). Além disso, lembre-se de que a quebra de linha deve ser 

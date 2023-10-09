@@ -1,3 +1,5 @@
+const { promises } = require('nodemailer/lib/xoauth2');
+
 /**
  * Envia um e-mail padrão usando o Nodemailer.
  *
@@ -62,13 +64,18 @@ function enviarEmailPadrao(host, port, secure = false, user, pass, tls = false, 
 
     }
 
-    transporter.sendMail(mailOptions, function (error, info) {
-        if (error) {
-            console.log(error);
-            throw new Error("Erro no envio do email: ", error)
-        } else {
-            console.log("Email enviado:", info.response);
-        }
+    return new Promise((resolve, rejec)=>{
+
+        transporter.sendMail(mailOptions, (error, info) =>{
+            if (error) {
+                console.log(error);
+                rejec(error)
+            } else {
+                resolve(info.response)
+            }
+        })
+
     })
+
 }
  module.exports.enviarEmailPadrao = enviarEmailPadrao;

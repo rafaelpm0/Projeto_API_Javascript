@@ -1,10 +1,10 @@
 {
   "name": "projeto-api-javascript-email-padronizado",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Este é um projeto que permite o envio de e-mails personalizados com base em modelos predefinidos e tags associadas aos remetentes ou tag adicionais. ",
   "main": "emailPadrao.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "nodemon emailPadrao.js"
   },
   "repository": {
     "type": "git",
@@ -26,14 +26,17 @@
   ],
   "contributors": [
     {
-      "name": "Nome da Pessoa",
-      "email": "email@exemplo.com",
-      "url": "https://github.com/nome-do-colaborador"
+      "name": "João Vitor Rodrigues",
+      "email": "joao.vitor.rodrigues.tele@gmail.com",
+      "url": "https://github.com/joaovitorrod"
     }
   ],
   "dependencies": {
     "express": "^4.18.2",
     "nodemailer": "^6.9.5",
     "sqlite": "^5.0.1"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
   }
 }

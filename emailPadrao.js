@@ -26,8 +26,15 @@ function postEnviarEmailPadrao() {
         const db = await abrirBranco();
 
         try {
-            to = await consultaRemetente(db, remetente)
+            to = await consultaDb(db, undefined, "remetente", `id = ${remetente}`)
+                .then(resolve => {
+                    return resolve[0]
+                })
+                .catch(reject => {
+                    throw new Error(reject)
+                })
             console.log(to)
+
         } catch (err) {
             console.log("Remetente nao cadastrado: ", err)
             res.status(404).json({ NotFound: "Remetente nao cadastrado: ", err });
@@ -36,19 +43,32 @@ function postEnviarEmailPadrao() {
         }
 
         try {
-            ({ titulo, corpo, assinatura, imagem_url } = await consultaModeloEmail(db, modeloEmail))
-            console.log(titulo)
+            ({ titulo, corpo, assinatura, imagem_url } = await consultaDb(db, "titulo, corpo, assinatura, imagem_url", "modeloEmail", `id = ${modeloEmail}`)
+                .then(resolve => {
+                    return resolve[0]
+                })
+                .catch(reject => {
+                    throw new Error(reject)
+                }))
+
         } catch (err) {
+
             console.log("ModeloEmail nao cadastrado ", err);
             res.status(404).json({ NotFound: "ModeloEmail nao cadastrado", err });
             await fecharBanco(db);
             return;
         }
 
-        tagsObrigatorias = await consultaNomeTagsObrigatorias(db, modeloEmail)
+        tagsObrigatorias = await consultaDb(db, "nome_tag", "modeloEmail_tag", `id_modeloEmail = ${modeloEmail}`)
+            .then(resolve => {
+                return resolve.map(obj => obj.nome_tag)
+            })
+            .catch(reject => {
+                throw new Error(reject)
+            })
+
         console.log(tagsObrigatorias, " - ", tags)
 
-        tagsObrigatorias = tagsObrigatorias.map(obj => obj.nome_tag)
         let testeChaves = tagsObrigatorias.every(chave => chave in tags)
 
         if (!testeChaves) { // teste para verificar se todas as tags obrigatorias foram preenchidas
@@ -66,14 +86,22 @@ function postEnviarEmailPadrao() {
 
             for (let tag in tags) {
                 try {
-                    retornoTag = await consultaTag(db, tag, tags[tag])
-
+                    console.log(tag, tags)
+                    retornoTag = await consultaDb(db, "retorno", "tag", `nome = "${tag}" AND referencia = "${tags[tag]}"`).then(resolve => {
+                        console.log(resolve)
+                        return resolve[0]
+                    })
+                        .catch(err => {
+                            throw new Error(err)
+                        })
+                        
+                    console.log(retornoTag)    
                     let regex = new RegExp("{" + tag + "}", "g") // expressoa regex para trocar as tag no corpo e titulo do e-mail
                     corpo = corpo.replace(regex, retornoTag.retorno)
                     titulo = titulo.replace(regex, retornoTag.retorno)
                 } catch (err) {
-                    console.log("Conteudo da tag solicitada não cadastrada", err)
-                    res.status(404).json({ NotFound: "Conteudo da tag solicitada não cadastrada", err })
+                    console.log("Conteudo da tag solicitada não cadastrada: ", tag)
+                    res.status(404).json({ NotFound: "Conteudo da tag solicitada não cadastrada: ", tag})
                     await fecharBanco(db);
                     return;
                 }
@@ -95,18 +123,19 @@ function postEnviarEmailPadrao() {
 // modularizando funcao postEnviarEmailPadrao
 
 /**
- * Consulta um remetente no banco de dados com base em seu ID.
+ * Consulta dados no banco de dados com base em uma condição.
  *
- * @param {Object} db - O objeto de conexão com o banco de dados.
- * @param {number} remetente - O ID do remetente a ser consultado.
- * @returns {Promise} - Uma Promise que resolve com os dados do remetente consultado.
- * @throws {Error} - Lança um erro se ocorrerem erros na consulta ou se nenhum remetente for encontrado.
+ * @param {Object} db - O objeto de conexão com o banco de dados SQLite.
+ * @param {string} [coluns="*"] - As colunas a serem selecionadas na consulta SQL (padrão: todas as colunas).
+ * @param {string} table - O nome da tabela na qual a consulta será realizada.
+ * @param {string} [condition=""] - A condição de pesquisa da consulta SQL (opcional).
+ * @returns {Promise} - Uma Promise que resolve com os resultados da consulta.
  */
-function consultaRemetente(db, remetente) {
+function consultaDb(db, coluns = "*", table, condition) {
     return new Promise((resolve, reject) => {
-        db.all(`SELECT * FROM remetente WHERE id = ?`, // selecte email do remetente
-            [remetente],
-            async (err, rows) => {
+        db.all(`SELECT ${coluns} FROM ${table} WHERE ${condition}`, // selecte email do remetente
+            [],
+            (err, rows) => {
                 if ((err) || (rows.length === 0)) {
                     reject(err)
                 } else {
@@ -114,97 +143,8 @@ function consultaRemetente(db, remetente) {
                 }
             });
     }
-    ).then(resolve => {
-        return resolve[0]
-    })
-        .catch(reject => {
-            throw new Error(reject)
-        })
+    )
 }
-
-/**
- * Consulta um modelo de e-mail no banco de dados com base em seu ID.
- *
- * @param {Object} db - O objeto de conexão com o banco de dados.
- * @param {number} modeloEmail - O ID do modelo de e-mail a ser consultado.
- * @returns {Promise} - Uma Promise que resolve com os dados do modelo de e-mail consultado (titulo, corpo, assinatura e imagem_url).
- * @throws {Error} - Lança um erro se ocorrerem erros na consulta ou se nenhum modelo de e-mail for encontrado.
- */
-function consultaModeloEmail(db, modeloEmail) {
-    return new Promise((resolve, reject) => {
-        db.all(`SELECT titulo, corpo, assinatura, imagem_url FROM modeloEmail WHERE id = ?`, // select modelo email
-            [modeloEmail],
-            (err, rows) => {
-                if ((err) || (rows.length === 0)) {
-                    reject(modeloEmail);
-                } else {
-                    resolve(rows);
-                }
-            });
-    }).then((resolve) => {
-        return resolve[0]
-    })
-        .catch((reject) => {
-            throw new Error(reject)
-        })
-
-}
-
-/**
- * Consulta os nomes das tags obrigatórias associadas a um modelo de e-mail no banco de dados.
- *
- * @param {Object} db - O objeto de conexão com o banco de dados.
- * @param {number} modeloEmail - O ID do modelo de e-mail para o qual se deseja obter os nomes das tags obrigatórias.
- * @returns {Promise} - Uma Promise que resolve com um array de nomes de tags obrigatórias.
- * @throws {Error} - Lança um erro se ocorrerem erros na consulta ou se nenhuma tag for encontrada.
- */
-function consultaNomeTagsObrigatorias(db, modeloEmail) {
-    return new Promise((resolve, rejecte) => {
-        db.all(`SELECT nome_tag FROM modeloEmail_tag WHERE id_modeloEmail = ?`, // select tags
-            [modeloEmail],
-            (err, rows) => {
-                if (err) {  // testar para ver oque acontece quando é pesquisado e não há tag
-                    rejecte(err)
-                } else {
-                    resolve(rows)
-                }
-            }
-        )
-    })
-}
-
-
-/**
- * Consulta o conteúdo de uma tag no banco de dados com base em sua chave e valor de referência.
- *
- * @param {Object} db - O objeto de conexão com o banco de dados.
- * @param {string} chave - A chave da tag a ser consultada.
- * @param {string} valor - O valor de referência da tag a ser consultada.
- * @returns {Promise} - Uma Promise que resolve com o conteúdo da tag consultada.
- * @throws {Error} - Lança um erro se ocorrerem erros na consulta ou se nenhum conteúdo for encontrado para a tag.
- */
-function consultaTag(db, chave, valor) {
-    return new Promise((resolve, rejecte) => {
-        db.all(`SELECT retorno FROM tag WHERE nome = ? AND referencia = ?`, // select do conteudo a ser substituido da tag
-            [chave, valor],
-            (err, rows) => {
-                if ((err) || (rows.length === 0)) {
-                    console.log("Conteudo da Tag não cadatrado ", err)
-                    rejecte(err)
-                } else {
-                    console.log("Conteudo tag ", rows)
-                    resolve(rows)
-                }
-            })
-    }).then(resolve => {
-        return resolve[0]
-    })
-        .catch(err => {
-            throw new Error(err)
-        })
-}
-
-
 // Inicio das requisoes GET e POST
 
 /**
@@ -380,7 +320,7 @@ function postModeloEmail() {
  */
 function getModeloEmail() {
     try {
-        app.get('/search/modeloEmail', async(req, res) => {
+        app.get('/search/modeloEmail', async (req, res) => {
             let db = await abrirBranco()
 
             db.all(`SELECT * FROM modeloEmail`,
@@ -394,7 +334,7 @@ function getModeloEmail() {
                         res.status(201).json({ rows })
                     }
                 })
-                await fecharBanco(db)
+            await fecharBanco(db)
         });
     } catch (err) { res.status(400).json({ error: err.message }) }
 
@@ -411,7 +351,7 @@ function getModeloEmail() {
  */
 function postModeloEmail_tag() {
     try {
-        app.post('/insert/ModeloEmail_tag', async(req, res) => {
+        app.post('/insert/ModeloEmail_tag', async (req, res) => {
             let db = await abrirBranco()
 
             let { id_modeloEmail, nome_tag } = req.body
@@ -428,7 +368,7 @@ function postModeloEmail_tag() {
                         res.status(201).json({ message: "ModeloEmail_tag added successufully" })
                     }
                 })
-                await fecharBanco(db)
+            await fecharBanco(db)
         });
     } catch (err) { res.status(400).json({ error: err.message }) }
 }
@@ -444,7 +384,7 @@ function postModeloEmail_tag() {
  */
 function getModeloEmail_tag() {
     try {
-        app.get('/search/modeloEmail_tag', async(req, res) => {
+        app.get('/search/modeloEmail_tag', async (req, res) => {
             let db = await abrirBranco()
 
             db.all(`SELECT * FROM modeloEmail_tag`,
@@ -458,7 +398,7 @@ function getModeloEmail_tag() {
                         res.status(201).json({ rows })
                     }
                 })
-                await fecharBanco(db)
+            await fecharBanco(db)
         });
     } catch (err) { res.status(400).json({ error: err.message }) }
 }

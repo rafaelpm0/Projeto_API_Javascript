@@ -16,7 +16,7 @@ const envioEmail = require('./envioEmail');
  * @throws {Error} - Lança um erro em caso de falha no envio do e-mail.
  */
 function postEnviarEmailPadrao() {
-    app.post('/send/email', async (req, res) => {
+    app.post('/send/emailPadrao', async (req, res) => {
         console.log(req.body)
 
 
@@ -94,37 +94,84 @@ function postEnviarEmailPadrao() {
                         .catch(err => {
                             throw new Error(err)
                         })
-                        
-                    console.log(retornoTag)    
+
+                    console.log(retornoTag)
                     let regex = new RegExp("{" + tag + "}", "g") // expressoa regex para trocar as tag no corpo e titulo do e-mail
                     corpo = corpo.replace(regex, retornoTag.retorno)
                     titulo = titulo.replace(regex, retornoTag.retorno)
                 } catch (err) {
                     console.log("Conteudo da tag solicitada não cadastrada: ", tag)
-                    res.status(404).json({ NotFound: "Conteudo da tag solicitada não cadastrada: ", tag})
+                    res.status(404).json({ NotFound: "Conteudo da tag solicitada não cadastrada: ", tag })
                     await fecharBanco(db);
                     return;
                 }
             }
 
             await fecharBanco(db);
-            
-            
+
+
             await envioEmail.enviarEmailPadrao(host, port, secure, user, pass, tls, from, to.email, titulo,
                 corpo, imagem_url, assinatura)
-                .then(resolve =>{
-                    console.log("Email enviado com sucesso"); 
-                    res.status(201).json({ message: 'Email enviado com sucesso send successfuly' });
+                .then(resolve => {
+                    console.log("Email enviado com sucesso");
+                    res.status(201).json({ message: 'Email enviado com sucesso.' });
                 })
-                .catch(reject=>{
+                .catch(reject => {
                     console.log("Email rejeitado");
-                    res.status(404).json({ Error: 'Email rejeitado: ', reject});
+                    res.status(404).json({ Error: 'Email rejeitado: ', reject });
                 })
 
         }
 
     }
     );
+}
+/**
+ * Envia um e-mail manualmente com base nos parâmetros fornecidos.
+ *
+ * @param {Object} app - O objeto de aplicação Express.
+ * @param {Object} envioEmail - O módulo de envio de e-mail.
+ */
+function postEmailManual() {
+    app.post('/send/Manual', async (req, res) => {
+
+        /**
+ * Parâmetros da solicitação.
+ *
+ * @typedef {Object} RequestBody
+ * @property {string} host - O endereço do servidor de e-mail.
+ * @property {number} port - A porta do servidor de e-mail.
+ * @property {boolean} [secure=false] - Indica se deve usar uma conexão segura.
+ * @property {string} user - O nome de usuário para autenticação no servidor de e-mail.
+ * @property {string} pass - A senha para autenticação no servidor de e-mail.
+ * @property {boolean} [tls=false] - Indica se deve usar o protocolo TLS.
+ * @property {string} from - O endereço de e-mail remetente.
+ * @property {string} sender - O nome do remetente.
+ * @property {string} title - O assunto do e-mail.
+ * @property {string} body - O corpo do e-mail.
+ * @property {string} [url=''] - URL opcional a ser incluída no corpo do e-mail.
+ * @property {string} signature - A assinatura a ser incluída no e-mail.
+ */
+
+        const { host, port, secure = false, user, pass, tls = false, from, sender, title, body, url = '', signature } = req.body;
+        let valoresObrigatorios = { host, port, user, pass, from, sender, title, body, signature };
+
+
+        if (!Object.values(valoresObrigatorios).some(value => typeof value === 'undefined')) {
+            try {
+                await envioEmail.enviarEmailPadrao(host, port, secure, user, pass, tls, from, sender, title, body, url, signature);
+                res.status(201).json({ message: "Email enviado com sucesso." })
+            } catch (err) {
+                res.status(401).json({ error: "Erro ao enviar e-mail: ", err })
+            }
+        } else {
+            let error = ['Falta as tags: ', Object.keys(valoresObrigatorios).filter(key => typeof valoresObrigatorios[key] === 'undefined').join(', ')]
+            res.status(404).json({ error });
+
+        }
+
+    }
+    )
 }
 
 // modularizando funcao postEnviarEmailPadrao
@@ -435,6 +482,111 @@ function postCriarBanco() {
 
 
 /**
+ * Função deleteModeloEmail
+ * 
+ * Esta função é um endpoint do Express que lida com requisições DELETE para '/delete/modeloEmail'.
+ * Ela tenta deletar um modelo de email específico do banco de dados.
+ * 
+ * @async
+ * @function deleteModeloEmail
+ * @param {Object} req - O objeto de solicitação do Express.
+ * @param {Object} req.body - O corpo da solicitação.
+ * @param {number} req.body.id_modeloEmail - O ID do modelo de email a ser deletado.
+ * @param {Object} res - O objeto de resposta do Express.
+ * @throws {Error} Se houver um erro ao tentar deletar o modelo de email, um erro será lançado e a resposta terá um status 400.
+ * @returns {Object} Se bem sucedido, retorna um objeto JSON com uma mensagem de sucesso e a resposta terá um status 201.
+ */
+function deleteModeloEmail() {
+    app.delete('/delete/modeloEmail', async (req, res) => {
+        let db = await abrirBranco();
+
+        let { id_modeloEmail } = req.body;
+
+        try {
+            db.run(`DELETE FROM modeloEmail WHERE id=?`, [id_modeloEmail]);
+
+            res.status(201).json({ message: 'ID deletado com sucesso' });
+            await fecharBanco(db);
+        } catch (err) {
+            res.status(400).json({ error: "Erro ao deletar ID: ", err });
+            await fecharBanco(db);
+        }
+
+    })
+}
+
+function deleteRemetente() {
+    app.delete('/delete/remetente', async (req, res) => {
+
+        let db = await abrirBranco();
+
+        let { id_remetente } = req.body;
+
+        try {
+            db.run(`DELETE FROM remetente WHERE id=?`, [id_remetente]);
+
+            res.status(201).json({ message: 'ID deletado com sucesso' });
+            await fecharBanco(db);
+        } catch (err) {
+            res.status(400).json({ error: "Erro ao deletar ID: ", err });
+            await fecharBanco(db);
+        }
+    })
+}
+
+function deleteTag() {
+    app.delete('/delete/tag', async (req, res) => {
+
+        let db = await abrirBranco();
+
+        let { nome, referencia } = req.body;
+
+        try {
+            db.run(`DELETE FROM tag WHERE nome=? AND referencia=?`, [nome, referencia]);
+
+            res.status(201).json({ message: 'Valor deletado com sucesso' });
+            await fecharBanco(db);
+        } catch (err) {
+            res.status(400).json({ error: "Erro ao deletar valor: ", err });
+            await fecharBanco(db);
+        }
+    })
+}
+
+function deleteModeloEmail_tag() {
+    app.delete('/delete/modeloEmail_tag', async (req, res) => {
+
+        let db = await abrirBranco();
+
+        let { id_modeloEmail, nome_tag } = req.body;
+    
+        try {
+            
+            // Desativar temporariamente as restrições de chave estrangeira
+            db.serialize(()=>{
+                db.run('PRAGMA foreign_keys = OFF');
+
+                // Excluir registros na tabela de destino
+                db.run('DELETE FROM modeloEmail_tag WHERE id_modeloEmail = ? AND nome_tag = ?', [id_modeloEmail, nome_tag]);
+    
+                // Ativar restrições de chave estrangeira novamente
+                db.run('PRAGMA foreign_keys = ON');
+            })
+
+
+            res.status(201).json({ message: 'Valor deletado com sucesso' });
+            await fecharBanco(db);
+        } catch (err) {
+            res.status(400).json({ error: "Erro ao deletar valor: ", err });
+            await fecharBanco(db);
+        }
+
+    })
+}
+
+
+
+/**
  * Função para abrir o banco de dados SQLite.
  *
  * Esta função cria ou abre o banco de dados SQLite chamado 'banco.db'.
@@ -554,7 +706,7 @@ function criarBase(db) {
                 id_modeloEmail INTEGER,
                 nome_tag TEXT,
                 FOREIGN KEY(id_modeloEmail) REFERENCES modeloEmail(id),    
-                FOREIGN KEY(nome_tag) REFERENCES tag(nome)
+                FOREIGN KEY(nome_tag) REFERENCES tag(nome),
                 PRIMARY KEY (id_modeloEmail, nome_tag)
               )`, err => {
             if (err) {
@@ -575,11 +727,16 @@ function criarBase(db) {
 }
 
 postCriarBanco();
+deleteModeloEmail();
+deleteRemetente();
+deleteTag();
+deleteModeloEmail_tag();
 postRemetente();
 getClieste();
 getTag();
 postTag();
 postModeloEmail();
+postEmailManual();
 getModeloEmail();
 postModeloEmail_tag();
 getModeloEmail_tag();

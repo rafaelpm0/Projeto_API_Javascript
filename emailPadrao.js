@@ -133,7 +133,7 @@ function postEnviarEmailPadrao() {
  * @param {Object} envioEmail - O módulo de envio de e-mail.
  */
 function postEmailManual() {
-    app.post('/send/Manual', async (req, res) => {
+    app.post('/send/manual', async (req, res) => {
 
         /**
  * Parâmetros da solicitação.

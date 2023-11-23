@@ -5,8 +5,8 @@
   "main": "emailPadrao.js",
   "scripts": {
     "start": "nodemon emailPadrao.js",
-    "create-database" : "node create-database.js"
-
+    "create-database": "node create-database.js",
+    "dev": "node emailPadrao.js"
   },
   "repository": {
     "type": "git",
@@ -41,7 +41,4 @@
   "devDependencies": {
     "nodemon": "^3.0.1"
   }
-
-
-  
 }

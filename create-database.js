@@ -1,9 +1,9 @@
 const emailPadrao = require('./emailPadrao');
 
-async function criar(){
+async function criarBancoPadrao(){
     const db = await emailPadrao.abrirBanco();
     await emailPadrao.criarBase(db);
     await emailPadrao.fecharBanco(db);
 }
 
-criar();
+criarBancoPadrao();

@@ -4,7 +4,9 @@
   "description": "Este é um projeto que permite o envio de e-mails personalizados com base em modelos predefinidos e tags associadas aos remetentes ou tag adicionais. ",
   "main": "emailPadrao.js",
   "scripts": {
-    "start": "nodemon emailPadrao.js"
+    "start": "nodemon emailPadrao.js",
+    "create-database" : "node create-database.js"
+
   },
   "repository": {
     "type": "git",
@@ -39,4 +41,7 @@
   "devDependencies": {
     "nodemon": "^3.0.1"
   }
+
+
+  
 }

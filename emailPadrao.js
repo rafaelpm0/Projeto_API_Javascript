@@ -23,7 +23,7 @@ function postEnviarEmailPadrao() {
         const { host, port, secure = false, user, pass, tls = false, from, remetente, modeloEmail, tags } = req.body
         let to, titulo, corpo, assinatura, imagem_url, retornoTag, tagsObrigatorias;
 
-        const db = await abrirBranco();
+        const db = await abrirBanco();
 
         try {
             to = await consultaDb(db, undefined, "remetente", `id = ${remetente}`)
@@ -217,7 +217,7 @@ function postRemetente() {
 
         try {
             let { nome, email, telefone, info_ad_1, info_ad_2, info_ad_3 } = req.body
-            let db = await abrirBranco()
+            let db = await abrirBanco()
 
             db.run(`INSERT INTO remetente(nome, email, telefone, info_ad_1, info_ad_2, info_ad_3)
                 VALUES (?, ?, ?, ?, ?, ?); `,
@@ -252,7 +252,7 @@ function getClieste() {
         console.log(req.body);
 
         try {
-            let db = await abrirBranco()
+            let db = await abrirBanco()
 
             db.all(`SELECT * FROM remetente`,
                 [], (err, rows) => {
@@ -277,7 +277,7 @@ function postTag() {
 
         try {
             let { nome, referencia, retorno } = req.body
-            let db = await abrirBranco()
+            let db = await abrirBanco()
 
             nome = nome.toLowerCase()
 
@@ -312,7 +312,7 @@ function postTag() {
 function getTag() {
     try {
         app.get('/search/tag', async (req, res) => {
-            let db = await abrirBranco()
+            let db = await abrirBanco()
 
             db.all(`SELECT * FROM tag`,
                 [],
@@ -342,7 +342,7 @@ function getTag() {
 function postModeloEmail() {
     try {
         app.post('/insert/modeloEmail', async (req, res) => {
-            let db = await abrirBranco()
+            let db = await abrirBanco()
 
             const { nome, titulo, corpo, assinatura, imagem_url } = req.body
 
@@ -377,7 +377,7 @@ function postModeloEmail() {
 function getModeloEmail() {
     try {
         app.get('/search/modeloEmail', async (req, res) => {
-            let db = await abrirBranco()
+            let db = await abrirBanco()
 
             db.all(`SELECT * FROM modeloEmail`,
                 [],
@@ -408,7 +408,7 @@ function getModeloEmail() {
 function postModeloEmail_tag() {
     try {
         app.post('/insert/ModeloEmail_tag', async (req, res) => {
-            let db = await abrirBranco()
+            let db = await abrirBanco()
 
             let { id_modeloEmail, nome_tag } = req.body
 
@@ -441,7 +441,7 @@ function postModeloEmail_tag() {
 function getModeloEmail_tag() {
     try {
         app.get('/search/modeloEmail_tag', async (req, res) => {
-            let db = await abrirBranco()
+            let db = await abrirBanco()
 
             db.all(`SELECT * FROM modeloEmail_tag`,
                 [],
@@ -470,7 +470,7 @@ function getModeloEmail_tag() {
 function postCriarBanco() {
     try {
         app.post('/create/banco', async (req, res) => {
-            let db = await abrirBranco()
+            let db = await abrirBanco()
             await criarBase(db);
             await fecharBanco(db)
             res.status(201).json({ message: "Banco de dados criado com sucesso" })
@@ -498,7 +498,7 @@ function postCriarBanco() {
  */
 function deleteModeloEmail() {
     app.delete('/delete/modeloEmail', async (req, res) => {
-        let db = await abrirBranco();
+        let db = await abrirBanco();
 
         let { id_modeloEmail } = req.body;
 
@@ -518,7 +518,7 @@ function deleteModeloEmail() {
 function deleteRemetente() {
     app.delete('/delete/remetente', async (req, res) => {
 
-        let db = await abrirBranco();
+        let db = await abrirBanco();
 
         let { id_remetente } = req.body;
 
@@ -537,7 +537,7 @@ function deleteRemetente() {
 function deleteTag() {
     app.delete('/delete/tag', async (req, res) => {
 
-        let db = await abrirBranco();
+        let db = await abrirBanco();
 
         let { nome, referencia } = req.body;
 
@@ -556,7 +556,7 @@ function deleteTag() {
 function deleteModeloEmail_tag() {
     app.delete('/delete/modeloEmail_tag', async (req, res) => {
 
-        let db = await abrirBranco();
+        let db = await abrirBanco();
 
         let { id_modeloEmail, nome_tag } = req.body;
     
@@ -594,7 +594,7 @@ function deleteModeloEmail_tag() {
  * @returns {Promise<Object>} - Uma Promise que resolve com o objeto de banco de dados SQLite.
  * @throws {Error} - Lança um erro em caso de falha na criação ou abertura do banco de dados.
  */
-function abrirBranco() {
+function abrirBanco() {
 
     try {
         return new Promise((resolve, rejecte) => {
@@ -725,6 +725,14 @@ function criarBase(db) {
             throw new Error(err)
         })
 }
+
+
+module.exports ={
+    abrirBanco,
+    criarBase,
+    fecharBanco
+}
+
 
 postCriarBanco();
 deleteModeloEmail();

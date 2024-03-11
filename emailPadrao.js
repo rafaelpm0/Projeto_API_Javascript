@@ -737,9 +737,8 @@ function criarBase(db) {
         });
 
         db.run(`CREATE TABLE IF NOT EXISTS tag (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                referencia INTEGER PRIMARY KEY AUTOINCREMENT,
                 nome TEXT NOT NULL,
-                referencia TEXT NOT NULL,
                 retorno TEXT NOT NULL
               )`, err => {
             if (err) {

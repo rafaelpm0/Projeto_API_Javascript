@@ -63,7 +63,6 @@ Inserção de Tag:
 - Para alterar um valor de retorno, faça uma solicitação PATCH, mantendo 'nome' e 'referencia';
 {
   "nome": "exemplo",
-  "referencia": "01",
   "retorno": "Valor de Exemplo"
 }
 

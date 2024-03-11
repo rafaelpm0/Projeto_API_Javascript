@@ -283,14 +283,14 @@ function postTag() {
         console.log(req.body)
 
         try {
-            let { nome, referencia, retorno } = req.body
+            let { nome, retorno } = req.body
             let db = await abrirBanco()
 
             nome = nome.toLowerCase()
 
-            db.run(`INSERT INTO tag(nome, referencia, retorno)
-            VALUES(?, ?, ?);`,
-                [nome, referencia, retorno],
+            db.run(`INSERT INTO tag(nome, retorno)
+            VALUES(?, ?);`,
+                [nome, retorno],
                 err => {
                     if (err) {
                         console.log("Insercao em tag com erro")

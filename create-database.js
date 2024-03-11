@@ -4,6 +4,7 @@ async function criarBancoPadrao(){
     const db = await emailPadrao.abrirBanco();
     await emailPadrao.criarBase(db);
     await emailPadrao.fecharBanco(db);
+    return;
 }
 
 criarBancoPadrao();

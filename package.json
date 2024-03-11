@@ -34,9 +34,14 @@
     }
   ],
   "dependencies": {
+    "cors": "^2.8.5",
     "express": "^4.18.2",
     "nodemailer": "^6.9.5",
-    "sqlite": "^5.0.1"
+    "react": "^18.2.0",
+    "router-dom": "^2.2.11",
+    "sqlite": "^5.0.1",
+    "vit": "^0.0.1",
+    "vite": "^5.0.2"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"

@@ -1,7 +1,14 @@
 const express = require('express');
 const app = express();
-const port = process.env.PORT || 3000;
+const cors = require('cors')
+const port = process.env.PORT || 3003;
 app.use(express.json());
+
+app.use((req, res, next) =>{
+    res.header("Access-Control-Allow-Origin", "*");
+    app.use(cors());
+    next();
+})
 
 const envioEmail = require('./envioEmail');
 
@@ -64,7 +71,9 @@ function postEnviarEmailPadrao() {
                 return resolve.map(obj => obj.nome_tag)
             })
             .catch(reject => {
-                throw new Error(reject)
+                res.status(404).json({ NotFound: "ModeloEmail tags não cadastradas", reject});
+                fecharBanco(db);
+                return;
             })
 
         console.log(tagsObrigatorias, " - ", tags)
@@ -146,20 +155,20 @@ function postEmailManual() {
  * @property {string} pass - A senha para autenticação no servidor de e-mail.
  * @property {boolean} [tls=false] - Indica se deve usar o protocolo TLS.
  * @property {string} from - O endereço de e-mail remetente.
- * @property {string} sender - O nome do remetente.
+ * @property {string} to - O nome do remetente.
  * @property {string} title - O assunto do e-mail.
  * @property {string} body - O corpo do e-mail.
  * @property {string} [url=''] - URL opcional a ser incluída no corpo do e-mail.
  * @property {string} signature - A assinatura a ser incluída no e-mail.
  */
 
-        const { host, port, secure = false, user, pass, tls = false, from, sender, title, body, url = '', signature } = req.body;
-        let valoresObrigatorios = { host, port, user, pass, from, sender, title, body, signature };
+        const { host, port, secure = false, user, pass, tls = false, from, to, title, body, url = '', signature = ''} = req.body;
+        let valoresObrigatorios = { host, port, user, pass, from, to, title, body, signature };
 
 
         if (!Object.values(valoresObrigatorios).some(value => typeof value === 'undefined')) {
             try {
-                await envioEmail.enviarEmailPadrao(host, port, secure, user, pass, tls, from, sender, title, body, url, signature);
+                await envioEmail.enviarEmailPadrao(host, port, secure, user, pass, tls, from, to, title, body, url, signature);
                 res.status(201).json({ message: "Email enviado com sucesso." })
             } catch (err) {
                 res.status(401).json({ error: "Erro ao enviar e-mail: ", err })
@@ -212,8 +221,6 @@ function consultaDb(db, coluns = "*", table, condition) {
  */
 function postRemetente() {
     app.post('/insert/remetente', async (req, res) => {
-
-        console.log(req.body);
 
         try {
             let { nome, email, telefone, info_ad_1, info_ad_2, info_ad_3 } = req.body
@@ -330,6 +337,31 @@ function getTag() {
     } catch (err) { res.status(400).json({ error: err.message }) }
 }
 
+function getTagbyName() {
+    try {
+        app.get(`/search/tag/:tagName`, async (req, res) => {
+            const tagName = req.params.tagName;
+            let db = await abrirBanco();
+
+            db.all(`SELECT * FROM tag WHERE NOME = ?`,
+                [tagName],
+                (err, rows) => {
+                    if (err) {
+                        console.log(`Erro ao consultar a tabela tag`, err.message);
+                        res.status(400).json({ error: err.message });
+                    } else {
+                        console.log(`Sucesso ao consultar a tabela tag`);
+                        res.json(rows);
+                    }
+                });
+
+            await fecharBanco(db);
+        });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+}
+
 /**
  * Rota POST para inserção de um novo modelo de e-mail no banco de dados.
  *
@@ -443,7 +475,7 @@ function getModeloEmail_tag() {
         app.get('/search/modeloEmail_tag', async (req, res) => {
             let db = await abrirBanco()
 
-            db.all(`SELECT * FROM modeloEmail_tag`,
+            db.all("SELECT * FROM modeloEmail_tag",
                 [],
                 (err, rows) => {
                     if (err) {
@@ -458,6 +490,38 @@ function getModeloEmail_tag() {
         });
     } catch (err) { res.status(400).json({ error: err.message }) }
 }
+
+function getModeloEmail_tag_id() {
+    try {
+        app.get('/search/modeloEmail_tag/:id', async (req, res) => {
+            let db = await abrirBanco()
+            const id = parseInt(req.params.id);
+            let sql = '';
+
+            if (isNaN(id)) {
+                // Se nenhum ID foi fornecido, busca todos os registros na tabela
+                sql = 'SELECT * FROM modeloEmail_tag';
+            } else {
+                // Se um ID foi fornecido, busca registros com o ID correspondente
+                sql = `SELECT * FROM modeloEmail_tag WHERE id_modeloEmail=${id}`;
+            }
+                
+            db.all(sql,
+                [],
+                (err, rows) => {
+                    if (err) {
+                        console.log("Consulta do ModeloEmail_tag com erro ", err)
+                        res.status(400).json({ error: err.message })
+                    } else {
+                        console.log("Consulta do ModeloEmail_tag com sucesso")
+                        res.status(201).json({ rows })
+                    }
+                })
+            await fecharBanco(db)
+        });
+    } catch (err) { res.status(400).json({ error: err.message }) }
+}
+
 
 /**
  * Rota POST para criação de um banco de dados e suas tabelas.
@@ -673,10 +737,10 @@ function criarBase(db) {
         });
 
         db.run(`CREATE TABLE IF NOT EXISTS tag (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
                 nome TEXT NOT NULL,
                 referencia TEXT NOT NULL,
-                retorno TEXT,
-                PRIMARY KEY (nome, referencia)
+                retorno TEXT NOT NULL
               )`, err => {
             if (err) {
                 console.log("Falha na criação da tabela 'tag'", err.message);
@@ -703,11 +767,11 @@ function criarBase(db) {
         });
 
         db.run(`CREATE TABLE IF NOT EXISTS modeloEmail_tag (
-                id_modeloEmail INTEGER,
-                nome_tag TEXT,
-                FOREIGN KEY(id_modeloEmail) REFERENCES modeloEmail(id),    
-                FOREIGN KEY(nome_tag) REFERENCES tag(nome),
-                PRIMARY KEY (id_modeloEmail, nome_tag)
+            id_modeloEmail INTEGER,
+            nome_tag TEXT,
+            FOREIGN KEY(id_modeloEmail) REFERENCES modeloEmail(id),    
+            FOREIGN KEY(nome_tag) REFERENCES tag(nome),
+            PRIMARY KEY (id_modeloEmail, nome_tag)
               )`, err => {
             if (err) {
                 console.log("Falha na criação da tabela 'modeloEmail_tag'", err.message);
@@ -730,7 +794,8 @@ function criarBase(db) {
 module.exports ={
     abrirBanco,
     criarBase,
-    fecharBanco
+    fecharBanco,
+    postEnviarEmailPadrao
 }
 
 
@@ -749,6 +814,9 @@ getModeloEmail();
 postModeloEmail_tag();
 getModeloEmail_tag();
 postEnviarEmailPadrao();
+getModeloEmail_tag_id();
+getTagbyName();
+
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);

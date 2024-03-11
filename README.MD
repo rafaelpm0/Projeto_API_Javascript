@@ -60,7 +60,7 @@ Pesquisa de Remetente:
 
 Inserção de Tag:
 - Para inserir uma nova tag, faça uma solicitação POST para `/insert/tag` com os seguintes dados no corpo da solicitação em formato JSON:
-
+- Para alterar um valor de retorno, faça uma solicitação PATCH, mantendo 'nome' e 'referencia';
 {
   "nome": "exemplo",
   "referencia": "01",
@@ -69,7 +69,8 @@ Inserção de Tag:
 
 
 Pesquisa de Tag:
-- Para pesquisar tags, faça uma solicitação GET para `/search/tag`.
+- Para pesquisar tags, faça uma solicitação GET para `/search/tag` / `/search/tag/nomeDaTag`.
+- Caso informado o '/nomedaTag', ira resultar em todas as tags de um modelo de e-mail específico. Caso omita, ira trazer todas as tags e seus conteudo.
 
 Inserção de Modelo de E-mail:
 - Para inserir um novo modelo de e-mail, faça uma solicitação POST para `/insert/modeloEmail` com os seguintes dados no corpo da solicitação em formato JSON:
@@ -95,10 +96,11 @@ Associação de Tag a Modelo de E-mail:
 }
 
 Pesquisa de Associação de Tag a Modelo de E-mail:
-- Para pesquisar associações de tags a modelos de e-mail, faça uma solicitação GET para `/search/modeloEmail_tag`.
+- Para pesquisar associações de tags a modelos de e-mail, faça uma solicitação GET para `/search/modeloEmail_tag/` /`/search/modeloEmail_tag/id`.
+- Caso informado o '/id', ira resultar em todas as tags de um modelo de e-mail específico. Caso omita, ira trazer todas as tags e seus conteudo.
 
 Envio de E-mail Padrão:
-- Para enviar um e-mail personalizado com base em um modelo e tags, faça uma solicitação POST para `/send/email` com os seguintes dados no corpo da solicitação em formato JSON:
+- Para enviar um e-mail personalizado com base em um modelo e tags, faça uma solicitação POST para `/send/emailPadrao` com os seguintes dados no corpo da solicitação em formato JSON:
 
 {
   "host": "smtp.gmail.com",

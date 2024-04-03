@@ -66,6 +66,14 @@ Inserção de Tag:
   "retorno": "Valor de Exemplo"
 }
 
+Atualização de Tag: 
+
+- Para atualizar uma nova tag, faça uma solicitação PATCH para `/update/tag` com os seguintes dados no corpo da solicitação em formato JSON:
+{
+  "referencia": 1,
+  "retorno": "Valor de Exemplo"
+}
+
 
 Pesquisa de Tag:
 - Para pesquisar tags, faça uma solicitação GET para `/search/tag` / `/search/tag/nomeDaTag`.

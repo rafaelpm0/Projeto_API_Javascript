@@ -4,7 +4,7 @@ const cors = require('cors')
 const port = process.env.PORT || 3003;
 app.use(express.json());
 
-app.use((req, res, next) =>{
+app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
     app.use(cors());
     next();
@@ -71,7 +71,7 @@ function postEnviarEmailPadrao() {
                 return resolve.map(obj => obj.nome_tag)
             })
             .catch(reject => {
-                res.status(404).json({ NotFound: "ModeloEmail tags não cadastradas", reject});
+                res.status(404).json({ NotFound: "ModeloEmail tags não cadastradas", reject });
                 fecharBanco(db);
                 return;
             })
@@ -162,7 +162,7 @@ function postEmailManual() {
  * @property {string} signature - A assinatura a ser incluída no e-mail.
  */
 
-        const { host, port, secure = false, user, pass, tls = false, from, to, title, body, url = '', signature = ''} = req.body;
+        const { host, port, secure = false, user, pass, tls = false, from, to, title, body, url = '', signature = '' } = req.body;
         let valoresObrigatorios = { host, port, user, pass, from, to, title, body, signature };
 
 
@@ -253,10 +253,8 @@ function postRemetente() {
  * @param {Object} res - O objeto de resposta Express.
  * @throws {Error} - Lança um erro em caso de falha na consulta dos remetentes.
  */
-function getClieste() {
+function getRemetente() {
     app.get('/search/remetente', async (req, res) => {
-
-        console.log(req.body);
 
         try {
             let db = await abrirBanco()
@@ -279,8 +277,6 @@ function getClieste() {
 
 function postTag() {
     app.post('/insert/tag', async (req, res) => {
-
-        console.log(req.body)
 
         try {
             let { nome, retorno } = req.body
@@ -306,6 +302,89 @@ function postTag() {
 
     });
 }
+
+function pactchTag() {
+    app.patch('/update/tag', async (req, res) => {
+
+        try {
+            let { referencia, retorno } = req.body
+            let db = await abrirBanco()
+            db.run(`UPDATE tag SET retorno = ? where referencia = ?`,
+                [retorno, referencia],
+                err => {
+                    if (err) {
+                        console.log("Update da tag com erro")
+                        res.status(400).json({ error: err.message })
+                    } else {
+                        console.log("Update datag com sucesso")
+                        res.status(201).json({ message: 'Tag updated successfully' })
+                    }
+                })
+            await fecharBanco(db)
+        }
+        catch (err) { res.status(400).json({ error: err.message }) }
+
+    });
+}
+
+function pactchRemetente() {
+    app.patch('/update/remetente', async (req, res) => {
+        // Extrai as informações do corpo da requisição
+        const { nome, email, telefone, info_ad_1, info_ad_2, info_ad_3, id } = req.body;
+
+        try {
+            // Abre uma conexão com o banco de dados
+            let db = await abrirBanco();
+
+            // Executa a query SQL para atualizar o remetente
+            db.run(`UPDATE remetente SET nome=?, email=?, telefone=?, info_ad_1=?, info_ad_2=?, info_ad_3=? WHERE id=? `,
+                [nome, email, telefone, info_ad_1, info_ad_2, info_ad_3, id],
+                err => {
+                    if (err) {
+                        console.error("Erro ao atualizar Remetente:", err.message);
+                        res.status(400).json({ error: "Erro ao atualizar Remetente" });
+                    } else {
+                        console.log("Remetente atualizado com sucesso");
+                        res.status(201).json({ message: "Remetente atualizado com sucesso" });
+                    }
+                });
+
+            // Fecha a conexão com o banco de dados
+            await fecharBanco(db);
+        }
+        catch (err) {
+            console.error("Erro ao atualizar Remetente:", err.message);
+            res.status(400).json({ error: "Erro ao atualizar Remetente" });
+        }
+    });
+}
+
+function patchModeloEamil() {
+    app.patch('/update/modeloEmail', async (req, res) => {
+
+        try {
+            let { id, nome, titulo, corpo, assinatura, imagem_url } = req.body
+            let db = await abrirBanco()
+            db.run(`UPDATE modeloEmail SET nome=?, titulo=?, corpo=?, assinatura=?, imagem_url=? where id = ?`,
+                [nome, titulo, corpo, assinatura, imagem_url, id],
+                err => {
+                    if (err) {
+                        console.log("Update da tag com erro")
+                        res.status(400).json({ error: err.message })
+                    } else {
+                        console.log("Update datag com sucesso")
+                        res.status(201).json({ message: 'Tag updated successfully' })
+                    }
+                })
+            await fecharBanco(db)
+        }
+        catch (err) { res.status(400).json({ error: err.message }) }
+
+    });
+}
+
+
+
 
 /**
  * Rota POST para inserção de uma nova tag no banco de dados.
@@ -419,7 +498,7 @@ function getModeloEmail() {
                         res.status(400).json({ error: err.message })
                     } else {
                         console.log("Consulta do ModeloEmail com sucesso")
-                        res.status(201).json({ rows })
+                        res.status(201).json(rows)
                     }
                 })
             await fecharBanco(db)
@@ -505,7 +584,7 @@ function getModeloEmail_tag_id() {
                 // Se um ID foi fornecido, busca registros com o ID correspondente
                 sql = `SELECT * FROM modeloEmail_tag WHERE id_modeloEmail=${id}`;
             }
-                
+
             db.all(sql,
                 [],
                 (err, rows) => {
@@ -564,10 +643,10 @@ function deleteModeloEmail() {
     app.delete('/delete/modeloEmail', async (req, res) => {
         let db = await abrirBanco();
 
-        let { id_modeloEmail } = req.body;
+        let {id} = req.body;
 
         try {
-            db.run(`DELETE FROM modeloEmail WHERE id=?`, [id_modeloEmail]);
+            db.run(`DELETE FROM modeloEmail WHERE id=?`, [id]);
 
             res.status(201).json({ message: 'ID deletado com sucesso' });
             await fecharBanco(db);
@@ -584,10 +663,10 @@ function deleteRemetente() {
 
         let db = await abrirBanco();
 
-        let { id_remetente } = req.body;
+        let { id } = req.body;
 
         try {
-            db.run(`DELETE FROM remetente WHERE id=?`, [id_remetente]);
+            db.run(`DELETE FROM remetente WHERE id=?`, [id]);
 
             res.status(201).json({ message: 'ID deletado com sucesso' });
             await fecharBanco(db);
@@ -603,10 +682,10 @@ function deleteTag() {
 
         let db = await abrirBanco();
 
-        let { nome, referencia } = req.body;
+        let { referencia } = req.body;
 
         try {
-            db.run(`DELETE FROM tag WHERE nome=? AND referencia=?`, [nome, referencia]);
+            db.run(`DELETE FROM tag WHERE referencia=?`, [referencia]);
 
             res.status(201).json({ message: 'Valor deletado com sucesso' });
             await fecharBanco(db);
@@ -623,16 +702,16 @@ function deleteModeloEmail_tag() {
         let db = await abrirBanco();
 
         let { id_modeloEmail, nome_tag } = req.body;
-    
+
         try {
-            
+
             // Desativar temporariamente as restrições de chave estrangeira
-            db.serialize(()=>{
+            db.serialize(() => {
                 db.run('PRAGMA foreign_keys = OFF');
 
                 // Excluir registros na tabela de destino
                 db.run('DELETE FROM modeloEmail_tag WHERE id_modeloEmail = ? AND nome_tag = ?', [id_modeloEmail, nome_tag]);
-    
+
                 // Ativar restrições de chave estrangeira novamente
                 db.run('PRAGMA foreign_keys = ON');
             })
@@ -768,8 +847,6 @@ function criarBase(db) {
         db.run(`CREATE TABLE IF NOT EXISTS modeloEmail_tag (
             id_modeloEmail INTEGER,
             nome_tag TEXT,
-            FOREIGN KEY(id_modeloEmail) REFERENCES modeloEmail(id),    
-            FOREIGN KEY(nome_tag) REFERENCES tag(nome),
             PRIMARY KEY (id_modeloEmail, nome_tag)
               )`, err => {
             if (err) {
@@ -790,7 +867,7 @@ function criarBase(db) {
 }
 
 
-module.exports ={
+module.exports = {
     abrirBanco,
     criarBase,
     fecharBanco,
@@ -804,7 +881,8 @@ deleteRemetente();
 deleteTag();
 deleteModeloEmail_tag();
 postRemetente();
-getClieste();
+getRemetente();
+pactchRemetente();
 getTag();
 postTag();
 postModeloEmail();
@@ -815,7 +893,8 @@ getModeloEmail_tag();
 postEnviarEmailPadrao();
 getModeloEmail_tag_id();
 getTagbyName();
-
+pactchTag();
+patchModeloEamil();
 
 app.listen(port, () => {
     console.log(`Server is running on port ${port}`);

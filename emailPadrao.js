@@ -279,10 +279,9 @@ function postTag() {
     app.post('/insert/tag', async (req, res) => {
 
         try {
-            let { nome, retorno } = req.body
-            let db = await abrirBanco()
+            let { nome, retorno } = req.body;
+            let db = await abrirBanco();
 
-            nome = nome.toLowerCase()
 
             db.run(`INSERT INTO tag(nome, retorno)
             VALUES(?, ?);`,
@@ -429,7 +428,32 @@ function getTagbyName() {
                         console.log(`Erro ao consultar a tabela tag`, err.message);
                         res.status(400).json({ error: err.message });
                     } else {
+                        console.log(`Sucesso ao consultar a tabela tags`);
+                        res.json(rows);
+                    }
+                });
+
+            await fecharBanco(db);
+        });
+    } catch (err) {
+        res.status(400).json({ error: err.message });
+    }
+}
+
+
+function getTagEmpty() {
+    try {
+        app.get("/search/tagEmpty", async (req, res) => {
+            let db = await abrirBanco();
+            
+            db.all(`SELECT * FROM tag WHERE RETORNO IS NULL`,[],
+                (err, rows) => {
+                    if (err) {
+                        console.log(`Erro ao consultar a tabela tag`, err.message);
+                        res.status(400).json({ error: err.message });
+                    } else {
                         console.log(`Sucesso ao consultar a tabela tag`);
+                        console.log(rows)
                         res.json(rows);
                     }
                 });
@@ -460,13 +484,14 @@ function postModeloEmail() {
             db.run(`INSERT INTO modeloEmail(nome, titulo, corpo, assinatura, imagem_url)
                     VALUES(?,?,?,?,?)`,
                 [nome, titulo, corpo, assinatura, imagem_url],
-                err => {
+                function(err){
                     if (err) {
                         console.log("Insercao do ModeloEmail com erro ", err)
                         res.status(400).json({ error: err.message })
                     } else {
                         console.log("Insercao do ModeloEmail com sucesso")
-                        res.status(201).json({ message: "ModeloEmail added successufully" })
+                        console.log("LastID: "+ this.lastID);
+                        res.status(201).json({message: "ModeloEmail added successufully", id: this.lastID})
                     }
                 })
             await fecharBanco(db)
@@ -522,7 +547,7 @@ function postModeloEmail_tag() {
             let db = await abrirBanco()
 
             let { id_modeloEmail, nome_tag } = req.body
-
+            
             db.run(`INSERT INTO modeloEmail_tag(id_modeloEmail, nome_tag)
                     VALUES(?,?)`,
                 [id_modeloEmail, nome_tag],
@@ -562,7 +587,7 @@ function getModeloEmail_tag() {
                         res.status(400).json({ error: err.message })
                     } else {
                         console.log("Consulta do ModeloEmail_tag com sucesso")
-                        res.status(201).json({ rows })
+                        res.status(201).json(rows)
                     }
                 })
             await fecharBanco(db)
@@ -593,7 +618,7 @@ function getModeloEmail_tag_id() {
                         res.status(400).json({ error: err.message })
                     } else {
                         console.log("Consulta do ModeloEmail_tag com sucesso")
-                        res.status(201).json({ rows })
+                        res.status(201).json({rows})
                     }
                 })
             await fecharBanco(db)
@@ -818,7 +843,7 @@ function criarBase(db) {
         db.run(`CREATE TABLE IF NOT EXISTS tag (
                 referencia INTEGER PRIMARY KEY AUTOINCREMENT,
                 nome TEXT NOT NULL,
-                retorno TEXT NOT NULL
+                retorno TEXT
               )`, err => {
             if (err) {
                 console.log("Falha na criação da tabela 'tag'", err.message);
@@ -845,9 +870,9 @@ function criarBase(db) {
         });
 
         db.run(`CREATE TABLE IF NOT EXISTS modeloEmail_tag (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
             id_modeloEmail INTEGER,
-            nome_tag TEXT,
-            PRIMARY KEY (id_modeloEmail, nome_tag)
+            nome_tag TEXT
               )`, err => {
             if (err) {
                 console.log("Falha na criação da tabela 'modeloEmail_tag'", err.message);
@@ -893,6 +918,7 @@ getModeloEmail_tag();
 postEnviarEmailPadrao();
 getModeloEmail_tag_id();
 getTagbyName();
+getTagEmpty();
 pactchTag();
 patchModeloEamil();
 

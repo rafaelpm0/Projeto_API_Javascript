@@ -762,6 +762,11 @@ function deleteModeloEmail_tag() {
  * @returns {Promise<Object>} - Uma Promise que resolve com o objeto de banco de dados SQLite.
  * @throws {Error} - Lança um erro em caso de falha na criação ou abertura do banco de dados.
  */
+
+const key = "y94w9uxe02gcmpcy"
+const url ="sqlite3-production-43c4.up.railway.app"
+
+
 function abrirBanco() {
 
     try {

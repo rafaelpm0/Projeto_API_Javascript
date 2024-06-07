@@ -1,5 +1,4 @@
 node_modules
 express
 nodemailer
-/banco.db
 /texte.js
